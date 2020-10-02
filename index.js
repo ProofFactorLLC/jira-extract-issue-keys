@@ -43,6 +43,16 @@ async function extractJiraKeysFromCommit() {
                     }
                 });
             });
+            const prTitleMatches = matchAll(github.context.payload.pull_request.title, regex).toArray();
+            prTitleMatches.forEach((match) => {
+                if (resultArr.find((element) => element == match)) {
+                    // console.log(match + " is already included in result array");
+                }
+                else {
+                    // console.log(" adding " + match + " to result array");
+                    resultArr.push(match);
+                }
+            });
             const result = resultArr.join(',');
             core.setOutput("jira-keys", result);
         }
