@@ -7,12 +7,9 @@ async function extractJiraKeysFromCommit() {
     try {
         const regex = /((([A-Z]+)|([0-9]+))+-\d+)/g;
         const isPullRequest = core.getInput('is-pull-request') == 'true';
-        // console.log("isPullRequest: " + isPullRequest);
         const commitMessage = core.getInput('commit-message');
-        // console.log("commitMessage: " + commitMessage);
-        // console.log("core.getInput('parse-all-commits'): " + core.getInput('parse-all-commits'));
+        const baseBranchName = core.getInput('base-branch-name');
         const parseAllCommits = core.getInput('parse-all-commits') == 'true';
-        // console.log("parseAllCommits: " + parseAllCommits);
         const payload = github.context.payload;
 
         const token = process.env['GITHUB_TOKEN'];
@@ -59,21 +56,15 @@ async function extractJiraKeysFromCommit() {
                 }
             });
 
-            try {
-                if (process.env['GITHUB_REF']) {
-                    const branchName = process.env['GITHUB_REF'].split('/').slice(2).join('/')
-                    const branchNameMatches = matchAll(branchName, regex).toArray();
-                    branchNameMatches.forEach((match: any) => {
-                        if (resultArr.find((element: any) => element == match)) {
-                        } else {
-                            resultArr.push(match);
-                        }
-                    });
-                }
-            } catch (e) {
-                console.log('branch name not found')
+            if (baseBranchName) {
+                const branchNameMatches = matchAll(baseBranchName, regex).toArray();
+                branchNameMatches.forEach((match: any) => {
+                    if (resultArr.find((element: any) => element == match)) {
+                    } else {
+                        resultArr.push(match);
+                    }
+                });
             }
-
 
             const result = resultArr.join(',');
             core.setOutput("jira-keys", result);
