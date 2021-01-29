@@ -53,6 +53,22 @@ async function extractJiraKeysFromCommit() {
                     resultArr.push(match);
                 }
             });
+            try {
+                if (process.env['GITHUB_REF']) {
+                    const branchName = process.env['GITHUB_REF'].split('/').slice(2).join('/');
+                    const branchNameMatches = matchAll(branchName, regex).toArray();
+                    branchNameMatches.forEach((match) => {
+                        if (resultArr.find((element) => element == match)) {
+                        }
+                        else {
+                            resultArr.push(match);
+                        }
+                    });
+                }
+            }
+            catch (e) {
+                console.log('branch name not found');
+            }
             const result = resultArr.join(',');
             core.setOutput("jira-keys", result);
         }

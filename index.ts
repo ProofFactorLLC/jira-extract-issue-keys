@@ -29,7 +29,7 @@ async function extractJiraKeysFromCommit() {
             const repo = payload.repository.name;
             const prNum = payload.number;
 
-            const { data } = await octokit.pulls.listCommits({
+            const {data} = await octokit.pulls.listCommits({
                 owner: owner,
                 repo: repo,
                 pull_number: prNum
@@ -59,10 +59,25 @@ async function extractJiraKeysFromCommit() {
                 }
             });
 
+            try {
+                if (process.env['GITHUB_REF']) {
+                    const branchName = process.env['GITHUB_REF'].split('/').slice(2).join('/')
+                    const branchNameMatches = matchAll(branchName, regex).toArray();
+                    branchNameMatches.forEach((match: any) => {
+                        if (resultArr.find((element: any) => element == match)) {
+                        } else {
+                            resultArr.push(match);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log('branch name not found')
+            }
+
+
             const result = resultArr.join(',');
             core.setOutput("jira-keys", result);
-        }
-        else {
+        } else {
             // console.log("not a pull request");
 
             if (commitMessage) {
@@ -70,8 +85,7 @@ async function extractJiraKeysFromCommit() {
                 const matches = matchAll(commitMessage, regex).toArray();
                 const result = matches.join(',');
                 core.setOutput("jira-keys", result);
-            }
-            else {
+            } else {
                 // console.log("no commit-message input val provided...");
                 const payload = github.context.payload;
 
@@ -94,8 +108,7 @@ async function extractJiraKeysFromCommit() {
 
                     const result = resultArr.join(',');
                     core.setOutput("jira-keys", result);
-                }
-                else {
+                } else {
                     // console.log("parse-all-commits input val is false");
                     // console.log("head_commit: ", payload.head_commit);
                     const matches = matchAll(payload.head_commit.message, regex).toArray();
