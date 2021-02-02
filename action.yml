@@ -12,6 +12,9 @@ inputs:
   commit-message:
     description: 'commit message to be parsed for jira keys. Note that if this input is not provided, the commits found in github.context.payload will be used'
     required: false
+  base-branch-name:
+    description: 'base branch name of PR'
+    required: false
 
 outputs:
   jira-keys:
