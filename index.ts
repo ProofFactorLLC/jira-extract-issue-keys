@@ -1,3 +1,5 @@
+import {ReposListCommitsResponse} from "@octokit/rest";
+
 const core = require('@actions/core');
 const github = require('@actions/github');
 const matchAll = require("match-all");
@@ -61,11 +63,11 @@ async function extractJiraKeysFromCommit() {
             }
 
             if (parseAllCommits) {
-                const {commits} = await octokit.repos.listCommits({
+                const commits: ReposListCommitsResponse = (await octokit.repos.listCommits({
                     owner: owner,
                     repo: repo,
                     per_page: 100
-                });
+                })).data;
                 commits.forEach((item: any) => {
                     const commit = item.commit;
                     const matches: any = matchAll(commit.message, regex).toArray();

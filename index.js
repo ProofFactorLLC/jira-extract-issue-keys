@@ -56,11 +56,11 @@ async function extractJiraKeysFromCommit() {
                 });
             }
             if (parseAllCommits) {
-                const { commits } = await octokit.repos.listCommits({
+                const commits = (await octokit.repos.listCommits({
                     owner: owner,
                     repo: repo,
                     per_page: 100
-                });
+                })).data;
                 commits.forEach((item) => {
                     const commit = item.commit;
                     const matches = matchAll(commit.message, regex).toArray();
