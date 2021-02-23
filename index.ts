@@ -10,7 +10,6 @@ async function extractJiraKeysFromCommit() {
         const regex = /((([A-Z]+)|([0-9]+))+-\d+)/g;
         const isPullRequest = core.getInput('is-pull-request') == 'true';
         const commitMessage = core.getInput('commit-message');
-        const baseBranchName = core.getInput('base-branch-name');
         const parseAllCommits = core.getInput('parse-all-commits') == 'true';
         const payload = github.context.payload;
 
@@ -52,9 +51,19 @@ async function extractJiraKeysFromCommit() {
                 }
             });
 
-            if (baseBranchName) {
-                const branchNameMatches = matchAll(baseBranchName, regex).toArray();
-                branchNameMatches.forEach((match: any) => {
+
+            const pullInfoData = await octokit.pulls.get({
+                owner: owner,
+                repo: repo,
+                pull_number: prNum
+            });
+            const pullInfo = pullInfoData.data
+            const headBranch = pullInfo.head.ref
+            const baseBranch = pullInfo.base.ref
+
+            if (headBranch) {
+                const headBranchNameMatches = matchAll(headBranch, regex).toArray();
+                headBranchNameMatches.forEach((match: any) => {
                     if (resultArr.find((element: any) => element == match)) {
                     } else {
                         resultArr.push(match);
@@ -62,11 +71,12 @@ async function extractJiraKeysFromCommit() {
                 });
             }
 
-            if (parseAllCommits) {
+            if (parseAllCommits && baseBranch) {
                 const commits: ReposListCommitsResponse = (await octokit.repos.listCommits({
                     owner: owner,
                     repo: repo,
-                    per_page: 100
+                    per_page: 100,
+                    sha: baseBranch
                 })).data;
                 commits.forEach((item: any) => {
                     const commit = item.commit;
