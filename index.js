@@ -44,12 +44,11 @@ async function extractJiraKeysFromCommit() {
                     resultArr.push(match);
                 }
             });
-            const pullInfoData = await octokit.pulls.get({
+            const pullInfo = (await octokit.pulls.get({
                 owner: owner,
                 repo: repo,
                 pull_number: prNum
-            });
-            const pullInfo = pullInfoData.data;
+            })).data;
             const headBranch = pullInfo.head.ref;
             const baseBranch = pullInfo.base.ref;
             if (headBranch) {
