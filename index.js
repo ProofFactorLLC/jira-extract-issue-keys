@@ -6,7 +6,7 @@ const matchAll = require("match-all");
 const Octokit = require("@octokit/rest");
 async function extractJiraKeysFromCommit() {
     try {
-        const regex = /((([A-Z]+)|([0-9]+))+-\d+)/g;
+        const regex = /(([A-Z]+)(([A-Z]+)|([0-9]+))+-\d+)/g;
         const isPullRequest = core.getInput('is-pull-request') == 'true';
         const commitMessage = core.getInput('commit-message');
         const parseAllCommits = core.getInput('parse-all-commits') == 'true';
