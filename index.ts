@@ -25,21 +25,37 @@ async function extractJiraKeysFromCommit() {
             const repo = payload.repository.name;
             const prNum = payload.number;
 
-            const {data} = await octokit.pulls.listCommits({
+            const pullInfo = (await octokit.pulls.get({
                 owner: owner,
                 repo: repo,
                 pull_number: prNum
-            });
+            })).data;
 
-            data.forEach((item: any) => {
-                const commit = item.commit;
-                const matches: any = matchAll(commit.message, regex).toArray();
-                matches.forEach((match: any) => {
-                    if (!resultArr.find((element: any) => element == match)) {
-                        resultArr.push(match);
-                    }
+            const commitsPerPage = 100
+            const numCommitPages = Math.ceil(pullInfo.commits / commitsPerPage)
+            const headBranch = pullInfo.head.ref
+            const baseBranch = pullInfo.base.ref
+
+            /* Make sure we go through all the commits of a PR */
+            for (let i = 0; i < numCommitPages; i++) {
+                const {data} = await octokit.pulls.listCommits({
+                    owner: owner,
+                    repo: repo,
+                    pull_number: prNum,
+                    per_page: commitsPerPage,
+                    page: i
                 });
-            });
+
+                data.forEach((item: any) => {
+                    const commit = item.commit;
+                    const matches: any = matchAll(commit.message, regex).toArray();
+                    matches.forEach((match: any) => {
+                        if (!resultArr.find((element: any) => element == match)) {
+                            resultArr.push(match);
+                        }
+                    });
+                });
+            }
 
             const prTitleMatches = matchAll(github.context.payload.pull_request.title, regex).toArray();
             prTitleMatches.forEach((match: any) => {
@@ -51,14 +67,6 @@ async function extractJiraKeysFromCommit() {
                 }
             });
 
-
-            const pullInfo = (await octokit.pulls.get({
-                owner: owner,
-                repo: repo,
-                pull_number: prNum
-            })).data;
-            const headBranch = pullInfo.head.ref
-            const baseBranch = pullInfo.base.ref
 
             if (headBranch) {
                 const headBranchNameMatches = matchAll(headBranch, regex).toArray();

@@ -20,20 +20,34 @@ async function extractJiraKeysFromCommit() {
             const owner = payload.repository.owner.login;
             const repo = payload.repository.name;
             const prNum = payload.number;
-            const { data } = await octokit.pulls.listCommits({
+            const pullInfo = (await octokit.pulls.get({
                 owner: owner,
                 repo: repo,
                 pull_number: prNum
-            });
-            data.forEach((item) => {
-                const commit = item.commit;
-                const matches = matchAll(commit.message, regex).toArray();
-                matches.forEach((match) => {
-                    if (!resultArr.find((element) => element == match)) {
-                        resultArr.push(match);
-                    }
+            })).data;
+            const commitsPerPage = 100;
+            const numCommitPages = Math.ceil(pullInfo.commits / commitsPerPage);
+            const headBranch = pullInfo.head.ref;
+            const baseBranch = pullInfo.base.ref;
+            /* Make sure we go through all the commits of a PR */
+            for (let i = 0; i < numCommitPages; i++) {
+                const { data } = await octokit.pulls.listCommits({
+                    owner: owner,
+                    repo: repo,
+                    pull_number: prNum,
+                    per_page: commitsPerPage,
+                    page: i
                 });
-            });
+                data.forEach((item) => {
+                    const commit = item.commit;
+                    const matches = matchAll(commit.message, regex).toArray();
+                    matches.forEach((match) => {
+                        if (!resultArr.find((element) => element == match)) {
+                            resultArr.push(match);
+                        }
+                    });
+                });
+            }
             const prTitleMatches = matchAll(github.context.payload.pull_request.title, regex).toArray();
             prTitleMatches.forEach((match) => {
                 if (resultArr.find((element) => element == match)) {
@@ -44,13 +58,6 @@ async function extractJiraKeysFromCommit() {
                     resultArr.push(match);
                 }
             });
-            const pullInfo = (await octokit.pulls.get({
-                owner: owner,
-                repo: repo,
-                pull_number: prNum
-            })).data;
-            const headBranch = pullInfo.head.ref;
-            const baseBranch = pullInfo.base.ref;
             if (headBranch) {
                 const headBranchNameMatches = matchAll(headBranch, regex).toArray();
                 headBranchNameMatches.forEach((match) => {
